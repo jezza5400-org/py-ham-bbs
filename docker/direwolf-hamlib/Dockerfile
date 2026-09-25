@@ -13,8 +13,8 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 
 WORKDIR /src
 
-# Default to 4.7.2 override in docker-compose.yml
 ARG HAMLIB_VER=4.7.2
+ARG DIREWOLF_REF=1.8.1
 RUN wget -q https://github.com/Hamlib/Hamlib/releases/download/${HAMLIB_VER}/hamlib-${HAMLIB_VER}.tar.gz && \
 	tar xf hamlib-${HAMLIB_VER}.tar.gz && \
 	cd hamlib-${HAMLIB_VER} && \
@@ -22,7 +22,7 @@ RUN wget -q https://github.com/Hamlib/Hamlib/releases/download/${HAMLIB_VER}/ham
 	make -j$(nproc) && \
 	make install
 
-RUN git clone --depth=1 -b dev https://github.com/wb2osz/direwolf.git direwolf && \
+RUN git clone --depth=1 --branch ${DIREWOLF_REF} https://github.com/wb2osz/direwolf.git direwolf && \
 	cd direwolf && \
 	mkdir build && cd build && \
 	cmake -DCMAKE_INSTALL_PREFIX=/opt/radio -DCMAKE_PREFIX_PATH=/opt/radio .. && \

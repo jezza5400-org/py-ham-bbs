@@ -4,14 +4,14 @@ set -e
 RED='\033[0;31m'
 NC='\033[0m'
 
-RADIO_MODEL="${RADIO_MODEL:-1}"
-RADIO_DEVICE="${RADIO_DEVICE:-/dev/null}"
+RADIO_MODEL="${RADIO_MODEL:?RADIO_MODEL must be set}"
+RADIO_DEVICE="${RADIO_DEVICE:?RADIO_DEVICE must be set}"
 
 STATUS_LOG=/tmp/direwolf-startup.log
 : > "$STATUS_LOG"  # truncate fresh each start
 
 # Start rigctld in the background
-rigctld -m ${RADIO_MODEL} -r "${RADIO_DEVICE}" -s 115200 -T 0.0.0.0 -t 4532 &
+rigctld -m "${RADIO_MODEL}" -r "${RADIO_DEVICE}" -s 115200 -T 0.0.0.0 -t 4532 &
 RIGCTLD_PID=$!
 
 # Wait for rigctld to bind, with a timeout

@@ -1,0 +1,16 @@
+[Unit]
+Description=Hamlib rig control daemon
+After=network.target
+
+[Service]
+Type=simple
+User=ham-bbs
+Group=dialout
+SupplementaryGroups=plugdev
+EnvironmentFile=-/etc/ham-bbs/ham-bbs.env
+ExecStart=/bin/sh -c 'exec /usr/bin/rigctld -m "$${RADIO_MODEL}" -r "$${RADIO_DEVICE}" -s 115200 -T 127.0.0.1 -t 4532'
+Restart=on-failure
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target

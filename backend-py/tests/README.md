@@ -3,10 +3,12 @@ Tests
 
 What these tests do
 -------------------
+
 Perform unit tests for the project (under `tests/`) and exercise the logic in `src/`.
 
 Running the tests
 -----------------
+
 - Run all tests with:
 
 ```bash
@@ -21,6 +23,7 @@ uv run pytest tests/lib/test_ax25.py
 
 Profiling a test run
 --------------------
+
 To profile a test run and write a cProfile output file, use the command below.
 Replace the test path with whichever test or test module you want to profile.
 

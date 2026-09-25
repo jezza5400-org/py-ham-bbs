@@ -7,7 +7,8 @@ from typing import Final, Self, cast
 
 logger = logging.getLogger(__name__)
 
-DEFAULT_DB_PATH: Final[str] = "py_ham_bbs_protocol.db"
+PROJECT_ROOT: Final[Path] = Path(__file__).resolve().parents[3]
+DEFAULT_DB_PATH: Final[Path] = PROJECT_ROOT / ".runtime" / "py_ham_bbs_protocol.db"
 CALLSIGN_WITH_OPTIONAL_SSID_RE: Final[re.Pattern[str]] = re.compile(r"^([A-Z0-9]{1,6})(?:-(\d{1,2}))?$")
 
 
@@ -239,5 +240,8 @@ class MessageRepository:
 
 def resolve_db_path() -> Path:
 	"""Resolve the database path from environment variables or use the default."""
-	raw_path = os.getenv("PY_HAM_BBS_DB_PATH", DEFAULT_DB_PATH)
-	return Path(raw_path).expanduser().resolve()
+	raw_path = os.getenv("PY_HAM_BBS_DB_PATH")
+	if raw_path is None:
+		return DEFAULT_DB_PATH
+	path = Path(raw_path).expanduser()
+	return path if path.is_absolute() else PROJECT_ROOT / path

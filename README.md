@@ -1,123 +1,89 @@
 # py-ham-bbs
 
-[![Python](https://img.shields.io/badge/python-3.13%2B-blue.svg)](https://www.python.org/downloads) [![Wiki Docs](https://img.shields.io/badge/wiki-docs-4a7ebb?logo=wikipedia&logoColor=white&style=flat)](https://github.com/jezza5400-org/py-ham-bbs/wiki) [![CI](https://github.com/JezzComputers/py-ham-bbs/actions/workflows/ci.yml/badge.svg)](https://github.com/JezzComputers/py-ham-bbs/actions/workflows/ci.yml)
+py-ham-bbs is a lightweight packet-radio bulletin board with a Python WebSocket backend, a TypeScript browser client, and optional Direwolf KISS/Hamlib hardware integration.
 
-Tools and configuration files for building a lightweight ham radio packet BBS made with Python using software TNCs and AX.25
+## Architecture
 
-## Documentation
+- `backend-py/` contains protocol validation, persistence, and the WebSocket server.
+- `backend-py/src/radio/` defines the hardware boundary; the application uses Direwolf KISS and does not provide a simulated radio backend.
+- `frontend-ts/` contains the browser client.
+- `config/` contains versioned service configuration, including Direwolf.
+- `docker/` contains the backend, frontend, and Direwolf/Hamlib container builds.
+- `deploy/pi/` and `scripts/` contain native Raspberry Pi OS deployment only.
 
-WebSocket Message Protocol can be found at the [WebSocket-Message-Protocol wiki](https://github.com/jezza5400-org/py-ham-bbs/wiki/08%E2%80%90WebSocket-Message-Protocol) page.
+## Direct development
 
-If possible the radio should be in FM-D (FM Data) mode as audio goes through the DATA path (USB soundcard or ACC connector) which is flat, wide, and unprocessed (what AX.25 wants)
+Requirements: Python 3.14+, `uv`, Node.js, and pnpm 11.
 
-## Implemented Protocol Subset
+Run the backend tests:
 
-The current server implementation in `src/server.py` supports a practical subset of the protocol for bidirectional exchange:
-
-- Accepts and validates JSON text frames for `message`, `ack`, `control`, and `error` types.
-- Assigns authoritative server-side `id` (UUIDv7) and `timestamp` (ISO-8601 with timezone) for accepted inbound frames.
-- Verifies each websocket session against the `allowed_students` table in the SQLite database before it accepts routed frames.
-- Validates `source` and `destination` in `CALL-SSID` format and soft-binds `source` to each WebSocket session.
-- Validates `message` payload as KISS hex and verifies it can decode as a KISS-wrapped AX.25 frame.
-- Supports `ack_required` values `0`, `1`, and `2` (unknown numeric values are treated as `0`).
-- Persists idempotency mapping in SQLite (`client_msg_id -> server_id`) so retries can be deduplicated safely.
-- Returns protocol `error` frames on malformed payloads and includes original identifiers when available.
-
-### Runtime Environment
-
-- `PY_HAM_BBS_DB_PATH`: SQLite file path for protocol message/idempotency storage (default: `py_ham_bbs_protocol.db`).
-- `PY_HAM_BBS_SERVER_SOURCE`: Server source station id used for generated ACK/error frames (default: `SERVER-0`).
-- `PY_HAM_BBS_DIREWOLF_ENABLED`: Enable Direwolf KISS forwarding (default: `1`, set to `0`/`false` to disable).
-- `PY_HAM_BBS_DIREWOLF_HOST`: Direwolf KISS host (default: `127.0.0.1`).
-- `PY_HAM_BBS_DIREWOLF_PORT`: Direwolf KISS port (default: `8001`).
-
-### Allowed Students
-
-The SQLite protocol database also contains an `allowed_students` table. Each row maps a student ID callsign to a student name. Bare callsigns are accepted and normalized internally to `CALL-0`.
-
-The web client’s Verify button sends the student ID to `src/server.py`; once the server finds a matching row in `allowed_students`, it marks that websocket session verified and uses the normalized student ID as the source callsign for subsequent frames.
-
-### Server binding and public reachability
-
-Default binding: `0.0.0.0:8765` — the protocol server listens on all network interfaces and is intended to be reachable from clients on your local network. The browser app is meant to connect to this websocket wrapper directly; `server.py` is the public-facing interface for the LAN deployment, while Direwolf remains the local backend.
-
-## GitHub Actions
-
-- **Badge**: The CI badge at the top links to the `python-tests.yml` workflow and shows the current status for the `main` branch.
-- **Workflow file**: `.github/workflows/python-tests.yml`
-- **What it runs**: Executes the test suite (via `pytest`) on pushes and pull requests across supported Python versions.
-- **How to view runs**: Open the repository's Actions tab or click the badge to inspect recent runs, logs, and artifacts.
-- **Local testing**: Run the test suite locally with `pytest` (or `pytest -q` for quiet) and verify lint/format with your chosen tools (e.g., `ruff`, `black`).
-
-## Conventions
-
-This project follows a set of development conventions to keep the codebase consistent, predictable, and easy to maintain.
-
-### Commit Message Format - Conventional Commits
-
-All commits should follow the **Conventional Commits** specification.  
-This helps maintain readable history, enables automated tooling, and clarifies intent.
-
-Common prefixes include:
-
-- `feat:` — new features  
-- `fix:` — bug fixes
-- `refactor:` — code restructuring without behavior changes  
-- `chore:` — maintenance tasks  
-- `test:` — adding or updating tests  
-
-More details: [https://www.conventionalcommits.org/](https://www.conventionalcommits.org/en/v1.0.0/#summary)
-
-### Python Naming & Style — PEP 8
-
-Python code in this repository should follow **PEP 8** conventions, including:
-
-- `snake_case` for file names (all lowercase, underscore separator)
-- `snake_case` for functions and variables
-- `PascalCase` for classes
-- `UPPER_CASE` for constants
-- 4‑space indentation (One TAB)
-- Clear, descriptive names
-- Avoiding overly long lines where practical
-
-Tools like `flake8`, `ruff` (what I use), or `black` are recommended for automated checking and formatting.
-
-### Python Warnings Usage
-
-Warnings should be issued using the standard library’s `warnings` module:
-
-```python
-import warnings
-warnings.warn("message", category=UserWarning)
+```sh
+cd backend-py
+uv sync
+uv run pytest
 ```
 
-A dedicated formatting/colouring helper is included in the project at ./src/lib/terminal.py and can be imported with `import lib.terminal`; use it for consistent output styling across modules. It adds ANSI colouring and automatic warning colouring based on warning type:
+Run both applications with the configured Direwolf/Hamlib services:
 
-```python
-import warnings
-from lib.terminal import use_color
-
-use_color()
-# Warnings will now be colored
-warnings.warn("message", category=UserWarning)
+```sh
+./scripts/dev.sh
 ```
 
-Warning colors:
+The backend listens on `ws://127.0.0.1:8765` and its health endpoint is `http://127.0.0.1:8080/`. Vite serves the browser client at `http://127.0.0.1:5173` and proxies `/ws` to the backend. `scripts/dev.sh` stores local runtime data in ignored `.runtime/`.
 
-- `UserWarning`: Yellow
-- `RuntimeWarning`: Red
-- `DeprecationWarning`: Magenta
+## Configuration
 
-### Branching & Commit Discipline
+Configuration is injected with environment variables. Important settings are:
 
-To keep the repository clean and reviewable:
+| Variable | Default | Purpose |
+| --- | --- | --- |
+| `PY_HAM_BBS_DB_PATH` | `.runtime/py_ham_bbs_protocol.db` | SQLite database path |
+| `PY_HAM_BBS_PORT` | `8765` | WebSocket port |
+| `PY_HAM_BBS_HEALTH_PORT` | `8080` | HTTP health port |
+| `PY_HAM_BBS_DIREWOLF_HOST` | `127.0.0.1` | KISS TCP host |
+| `PY_HAM_BBS_DIREWOLF_PORT` | `8001` | KISS TCP port |
+| `PY_HAM_BBS_DIREWOLF_CONFIG` | `config/direwolf/direwolf.conf` | Direwolf config path |
+| `PY_HAM_BBS_HAMLIB_HOST` | `127.0.0.1` | Hamlib companion host |
+| `PY_HAM_BBS_HAMLIB_PORT` | `4532` | Hamlib companion port |
 
-- Each **branch** should focus on a single feature, fix, or task.  
-- Each **commit** should represent one logical change.  
-- Avoid mixing unrelated changes in the same commit or branch.  
-- Use descriptive branch names such as:
-  - `feature/pybbs-routing`
-  - `fix/direwolf-config-path`
-  - `refactor/ax25-handler`
+The Compose development stack maps `.runtime/py_ham_bbs_protocol.db` to `/app/data/py_ham_bbs_protocol.db`, so development data survives container replacement without living beside application code. The populated database was migrated from `backend-py/py_ham_bbs_protocol.db`. Pi installs use the separate mutable path `/var/lib/ham-bbs/`; Pi updates never replace that database.
 
-This structure makes code review and management easier.
+## Docker Compose
+
+Compose remains the integration path and builds all three services from the shared source tree:
+
+```sh
+docker compose config
+docker compose up --build
+```
+
+Compose expects `RADIO_DEVICE`, `RADIO_MODEL`, audio/serial group IDs, and a hardware-appropriate `config/direwolf/direwolf.conf` in `.env`. The application connects to the Compose Direwolf KISS service; Hamlib `4.7.2` and Direwolf `1.8.1` are explicit build inputs. For a no-radio daemon check only, set `RADIO_MODEL=1`, `RADIO_DEVICE=/dev/null`, `ADEVICE null`, and `PTT none` explicitly; these are radio-daemon settings, not an application backend.
+
+The browser is available at `http://localhost:8080`; the backend WebSocket remains internal to the frontend proxy.
+
+## Raspberry Pi OS Lite
+
+The initial Pi deployment is native provisioning on Raspberry Pi OS Lite 64-bit. Use a tagged checkout or release source:
+
+```sh
+sudo HAM_BBS_SOURCE_DIR="$PWD" ./scripts/install-pi.sh
+sudo HAM_BBS_SOURCE_DIR="$PWD" ./scripts/update-pi.sh <tag-or-commit>
+```
+
+The installer creates `ham-bbs`, installs pinned pnpm and uv bootstrap versions, builds the frontend, installs `ham-bbs.service`, `direwolf.service`, and `rigctld.service`, and performs a health check. It preserves existing `/etc/ham-bbs` configuration and `/var/lib/ham-bbs` state. See [deploy/pi/README.md](deploy/pi/README.md) for paths and hardware setup.
+
+Configure stable `/dev/serial/by-id` and ALSA identifiers in `/etc/ham-bbs/ham-bbs.env` and `/etc/ham-bbs/direwolf.conf`. Logs are managed by journald:
+
+```sh
+journalctl -u ham-bbs.service -f
+```
+
+The updater has no rollback implementation yet; keep a backup of `/etc/ham-bbs` and `/var/lib/ham-bbs` as part of the host backup policy.
+
+## Tests and builds
+
+```sh
+cd backend-py && uv run pytest
+cd frontend-ts && pnpm install --frozen-lockfile && pnpm build
+docker compose config
+```

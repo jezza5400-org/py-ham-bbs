@@ -6,19 +6,14 @@ name = "py-ham-bbs"
 version = "0.1.0"
 description = "Python based BBS"
 readme = "README.md"
-requires-python = ">=3.13"
+requires-python = ">=3.14"
 dependencies = [
     "websockets",
-    "uuid6; python_version < '3.14'",
 ]
 
 # Install with uv sync --upgrade --all-groups
 [dependency-groups]
 dev = ["pyright", "ty", "pytest", "ruff"]
-
-# Install with uv sync --upgrade --extra=uuid
-[project.optional-dependencies]
-uuid = ["uuid6"]
 
 [tool.pytest.ini_options]
 minversion = "9.0"

@@ -1,0 +1,17 @@
+[Unit]
+Description=py-ham-bbs WebSocket protocol server
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=ham-bbs
+Group=ham-bbs
+WorkingDirectory=/opt/ham-bbs/backend-py
+EnvironmentFile=-/etc/ham-bbs/ham-bbs.env
+ExecStart=/opt/ham-bbs/backend-py/.venv/bin/python /opt/ham-bbs/backend-py/src/server.py
+Restart=on-failure
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target

@@ -69,6 +69,7 @@ web-client-dist/
 # Generated reports & Docker runtime
 lighthouse-*.html
 .docker/
+.runtime/
 
 # Configuration files
 .pypirc

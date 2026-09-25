@@ -1,0 +1,18 @@
+[Unit]
+Description=Direwolf software TNC
+Requires=rigctld.service
+After=network-online.target rigctld.service
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=ham-bbs
+Group=audio
+SupplementaryGroups=dialout plugdev
+WorkingDirectory=/opt/ham-bbs
+ExecStart=/usr/bin/direwolf -c /etc/ham-bbs/direwolf.conf
+Restart=on-failure
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target

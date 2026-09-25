@@ -5,22 +5,20 @@ import os
 import re
 from dataclasses import dataclass
 from datetime import UTC, datetime, tzinfo
-from platform import python_version_tuple
 from typing import Any, Final, Literal, cast
+from uuid import uuid7
 from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 
 from websockets.asyncio.server import ServerConnection, serve
 from websockets.exceptions import ConnectionClosed
 
 from lib.ax25 import InvalidAX25Error, is_valid_callsign
-from lib.database import MessageRepository, SaveFrameResult, resolve_db_path
+from lib.database import MessageRepository, SaveFrameResult
 from lib.direwolf import DEFAULT_KISS_HOST, DEFAULT_KISS_PORT, DirewolfKISSClient, validate_kiss_payload
 from lib.kiss import InvalidKISSError
-
-if int(python_version_tuple()[1]) < 14:
-	from uuid6 import uuid7  # pyright: ignore[reportMissingImports, reportUnknownVariableType]
-else:
-	from uuid import uuid7  # ty:ignore[unresolved-import, unused-ignore-comment]
+from radio.factory import create_radio
+from radio.interface import RadioInterface  # noqa: TC001
+from runtime_config import load_settings
 
 
 class InvalidFrameError(ValueError):
@@ -239,7 +237,7 @@ class MessageBrokerServer:
 
 	__slots__ = ("_store", "_server_source", "_direwolf_client", "_bound_sources", "_routes", "_pending_acks", "_verified_sources")
 
-	def __init__(self, store: MessageRepository, server_source: str, direwolf_client: DirewolfKISSClient | None = None) -> None:
+	def __init__(self, store: MessageRepository, server_source: str, direwolf_client: RadioInterface | None = None) -> None:
 		self._store = store
 		self._server_source = server_source
 		self._direwolf_client = direwolf_client
@@ -770,13 +768,13 @@ class MessageBrokerServer:
 			logger.info("Client disconnected: %s", websocket.remote_address)
 
 
-async def health_server() -> None:
+async def health_server(bind_host: str, health_port: int) -> None:
 	async def handle(_reader: asyncio.StreamReader, writer: asyncio.StreamWriter) -> None:
 		writer.write(b"HTTP/1.1 200 OK\r\nContent-Length: 3\r\n\r\nok\n")
 		await writer.drain()
 		writer.close()
 
-	server = await asyncio.start_server(handle, "0.0.0.0", 8080)  # noqa: S104
+	server = await asyncio.start_server(handle, bind_host, health_port)
 	async with server:
 		await server.serve_forever()
 
@@ -784,29 +782,31 @@ async def health_server() -> None:
 async def main() -> None:
 	logging.basicConfig(level=logging.INFO)
 	logger.info("Started")
-	db_path = resolve_db_path()
+	settings = load_settings()
+	db_path = settings.database_path
 	server_source = resolve_server_source()
 	store = MessageRepository(db_path)
-	direwolf_client = resolve_direwolf_client()
-	protocol_server = MessageBrokerServer(store, server_source, direwolf_client=direwolf_client)
+	radio = create_radio(settings)
+	protocol_server = MessageBrokerServer(store, server_source, direwolf_client=radio)
 
 	logger.info("Using protocol store: %s", db_path)
 	logger.info("Server source identity: %s", server_source)
-	if direwolf_client is not None:
-		logger.info("Direwolf KISS enabled: %s:%s", direwolf_client.host, direwolf_client.port)
+	logger.info("Direwolf KISS endpoint: %s:%s", radio.host, radio.port)
 
 	try:
-		async with serve(protocol_server.handler, "0.0.0.0", 8765) as server:  # noqa: S104
-			logger.info("Protocol server started on ws://0.0.0.0:8765")
-			health_task = asyncio.create_task(health_server())
+		async with serve(protocol_server.handler, settings.bind_host, settings.protocol_port) as server:
+			logger.info("Protocol server started on ws://%s:%s", settings.bind_host, settings.protocol_port)
+			health_task = asyncio.create_task(health_server(settings.bind_host, settings.health_port))
 			await server.serve_forever()
 			health_task.cancel()
 	finally:
-		if direwolf_client is not None:
-			direwolf_client.close()
+		radio.close()
 		store.close()
 		logger.info("Exited")
 
 
 if __name__ == "__main__":
-	asyncio.run(main())
+	try:
+		asyncio.run(main())
+	except KeyboardInterrupt:
+		logger.info("Stopped")
