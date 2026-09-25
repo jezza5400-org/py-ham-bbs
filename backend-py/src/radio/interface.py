@@ -7,11 +7,15 @@ class RadioInterface(Protocol):
 	"""Minimal transport contract required by the protocol server."""
 
 	@property
-	def host(self) -> str: ...
+	def host(self) -> str:
+		raise NotImplementedError
 
 	@property
-	def port(self) -> int: ...
+	def port(self) -> int:
+		raise NotImplementedError
 
-	def send_kiss_frame(self, kiss_frame: bytes) -> None: ...
+	def send_kiss_frame(self, kiss_frame: bytes) -> None:
+		raise NotImplementedError
 
-	def close(self) -> None: ...
+	def close(self) -> None:
+		raise NotImplementedError

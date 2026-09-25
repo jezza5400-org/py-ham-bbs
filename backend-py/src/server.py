@@ -187,7 +187,8 @@ def parse_inbound_frame(raw_frame: dict[str, Any]) -> ValidatedInboundFrame:
 			content = payload.get("content")
 			if not isinstance(content, dict):
 				raise InvalidFrameError("verify payload must include content as a JSON object")
-			student_id = cast(str, content.get("student_id"))
+			content = cast(dict[str, Any], content)
+			student_id = content.get("student_id")
 			if not isinstance(student_id, str) or student_id.strip() == "":
 				raise InvalidFrameError("verify payload must include student_id as a non-empty string")
 			if normalize_station_id(student_id) is None:
@@ -537,7 +538,8 @@ class MessageBrokerServer:
 			)
 			return
 
-		student_id_value = cast(str, content.get("student_id"))
+		content = cast(dict[str, Any], content)
+		student_id_value = content.get("student_id")
 		if not isinstance(student_id_value, str) or student_id_value.strip() == "":
 			await self._send_error(
 				websocket=websocket,

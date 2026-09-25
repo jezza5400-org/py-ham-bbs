@@ -3,17 +3,21 @@ from datetime import UTC, datetime
 from zoneinfo import ZoneInfo
 
 from websockets.asyncio.server import ServerConnection, serve
+from websockets.exceptions import ConnectionClosed
 
 
 async def handler(websocket: ServerConnection) -> None:
 	"""Handles a single client connection."""
 
-	while True:
-		now = datetime.now(UTC).isoformat()
-		now_local = datetime.now(ZoneInfo("Australia/Melbourne")).isoformat()
-		print(f"U-NOW: {now}\nL-NOW: {now_local}")
-		await websocket.send(now_local)
-		await asyncio.sleep(1)
+	try:
+		while True:
+			now = datetime.now(UTC).isoformat()
+			now_local = datetime.now(ZoneInfo("Australia/Melbourne")).isoformat()
+			print(f"U-NOW: {now}\nL-NOW: {now_local}")
+			await websocket.send(now_local)
+			await asyncio.sleep(1)
+	except ConnectionClosed:
+		print("Client disconnected.")
 
 
 async def main() -> None:

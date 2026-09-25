@@ -5,17 +5,18 @@ run-name: Python ${{ github.ref }} Tests
 defaults:
   run:
     shell: bash
+    working-directory: backend-py
 
 on:
   push:
     branches: [main]
     paths:
-      - "src/**"
+      - "backend-py/**"
       - ".github/workflows/**"
   pull_request:
     branches: [main]
     paths:
-      - "src/**"
+      - "backend-py/**"
       - ".github/workflows/**"
 
 permissions:
@@ -32,7 +33,7 @@ jobs:
     strategy:
       fail-fast: true
       matrix:
-        python-version: ["3.13.13", "3.14.4"]
+        python-version: ["3.14.7"]
 
     steps:
       - uses: actions/checkout@v6
@@ -55,8 +56,8 @@ jobs:
       - name: Cache virtualenv
         uses: actions/cache@v5
         with:
-          path: .venv
-          key: venv-${{ runner.os }}-${{ matrix.python-version }}-${{ hashFiles('uv.lock') }}
+          path: backend-py/.venv
+          key: venv-${{ runner.os }}-${{ matrix.python-version }}-${{ hashFiles('backend-py/uv.lock') }}
           restore-keys: |
             venv-${{ runner.os }}-${{ matrix.python-version }}-
 
