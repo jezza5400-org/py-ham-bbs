@@ -17,8 +17,18 @@ int main(int argc, char** argv) {
     AX25 ax25(config);
     
     std::vector<uint8_t> payload = {0x48, 0x65, 0x6C, 0x6C, 0x6F}; // "Hello" in ASCII
-
     auto out = ax25.encode(payload);
 
+    spdlog::info("Encoded AX.25 Frame: ");
+    for (const auto& byte : out) {
+        spdlog::info("{:02X} ", byte);
+    }
+
+    spdlog::info("\n");
+    spdlog::info("Decoding the frame...");
+    auto decoded = ax25.decode(out);
+    spdlog::info("Decoded AX.25 Frame: From {}-{} To {}-{} Payload: ", decoded.fromCallSign, decoded.fromSSID, decoded.toCallSign, decoded.toSSID);
+    spdlog::info(std::string(decoded.payload.begin(), decoded.payload.end()));
+    
     return 0;
 }   

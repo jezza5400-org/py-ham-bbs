@@ -47,3 +47,29 @@ std::vector<uint8_t> AX25::encode(const std::vector<uint8_t> &payload) {
 
   return frame;
 }
+
+DecodedAX25Frame AX25::decode(const std::vector<uint8_t> &frame) {
+  if (frame.size() < 15) {
+    throw std::runtime_error("Frame too short to decode");
+  }
+
+  DecodedAX25Frame decoded;
+
+  auto decodeCallSign = [](const std::vector<uint8_t> &data, size_t start) {
+    std::string callsign;
+    for (size_t i = start; i < start + 6; ++i) {
+      callsign += static_cast<char>(data[i] >> 1);
+    }
+    callsign.erase(callsign.find_last_not_of(' ') + 1);
+    return callsign;
+  };
+
+  decoded.fromCallSign = decodeCallSign(frame, 0);
+  decoded.fromSSID = (frame[6] >> 1) & 0x0F;
+  decoded.toCallSign = decodeCallSign(frame, 7);
+  decoded.toSSID = (frame[13] >> 1) & 0x0F;
+
+  decoded.payload.assign(frame.begin() + 15, frame.end());
+
+  return decoded;
+}
