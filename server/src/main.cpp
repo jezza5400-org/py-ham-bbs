@@ -2,7 +2,7 @@
 #include <spdlog/spdlog.h>
 #include <vector>
 
-#include "ax25/ax25.h"
+#include <ax25/ax25.h>
 
 int main(int argc, char** argv) {
     AX25Config config {
@@ -29,6 +29,6 @@ int main(int argc, char** argv) {
     auto decoded = ax25.decode(out);
     spdlog::info("Decoded AX.25 Frame: From {}-{} To {}-{} Payload: ", decoded.fromCallSign, decoded.fromSSID, decoded.toCallSign, decoded.toSSID);
     spdlog::info(std::string(decoded.payload.begin(), decoded.payload.end()));
-    
+
     return 0;
 }   
