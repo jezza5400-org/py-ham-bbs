@@ -1,9 +1,12 @@
 #include "ax25/ax25Config.h"
+#include "kiss/kissConfig.h"
 #include <cstdint>
 #include <spdlog/spdlog.h>
 #include <vector>
 
 #include <ax25/ax25.h>
+#include <kiss/kiss.h>
+
 #include <websocketpp/config/asio_client.hpp>
 #include <websocketpp/server.hpp>
 
@@ -22,13 +25,21 @@ int main(int argc, char** argv) {
     Client client;
     client.init_asio();
 
-    AX25Config config;
-    config.callSignFrom = "VK3ABC";
-    config.ssidFrom = 1;
-    config.callSignTo = "VK3JEZ";
-    config.ssidTo = 0;
+    AX25Config config { 
+        "VK3ABC",  // callSignFrom
+        "VK3JEZ",  // callSignTo
+        1,         // ssidFrom
+        0          // ssidTo
+    };
+
+    KissConfig kissConfig {
+        .type = KissConfigType::TCP,
+        .config = KissConfigTCP {"localhost", 8001}
+    };
 
     AX25* ax25 = new AX25(config);
+    KissClient* kissClient = new KissClient(kissConfig);
+    kissClient->connect();
 
     client.set_open_handler([&client](websocketpp::connection_hdl hdl) {
         spdlog::info("WebSocket connection opened");
@@ -44,6 +55,12 @@ int main(int argc, char** argv) {
     client.listen(8080);
     client.start_accept();
     client.run();
+
+    // Cleanup
+    delete ax25;
+
+    kissClient->disconnect();
+    delete kissClient;
 
     return 0;
 }   

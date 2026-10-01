@@ -7,6 +7,7 @@ set(CMAKE_CXX_STANDARD_REQUIRED True)
 
 add_library(ax25 
     src/ax25/ax25.cpp src/ax25/ax25.h
+    src/kiss/kiss.cpp src/kiss/kiss.h
 )
 target_link_libraries(ax25 spdlog::spdlog)
 target_include_directories(ax25 PUBLIC src)
