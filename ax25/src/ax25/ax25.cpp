@@ -1,8 +1,7 @@
 #include "ax25.h"
 #include <vector>
 
-std::vector<uint8_t> AX25::m_buildCallSign(const std::string &callsign,
-                                           int ssid, bool last) const {
+std::vector<uint8_t> AX25::m_buildCallSign(const std::string &callsign, int ssid, bool last) const {
   std::string callsignStr(callsign);
   std::transform(
       callsignStr.begin(), callsignStr.end(), callsignStr.begin(),
@@ -40,7 +39,7 @@ std::vector<uint8_t> AX25::encode(const std::vector<uint8_t> &payload) {
   header.insert(header.end(), fromCallSign.begin(), fromCallSign.end());
   header.insert(header.end(), toCallSign.begin(), toCallSign.end());
   header.push_back(0x03); // Control field for UI frame
-  
+
   frame.insert(frame.end(), header.begin(), header.end());
   frame.insert(frame.end(), payload.begin(), payload.end());
 

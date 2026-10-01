@@ -3,32 +3,31 @@
 #include <vector>
 
 #include <ax25/ax25.h>
+#include <websocketpp/config/asio_client.hpp>
+#include <websocketpp/client.hpp>
+
+using Client = websocketpp::client<websocketpp::config::asio_client>;
 
 int main(int argc, char** argv) {
-    AX25Config config {
-        .callSignFrom = "N0CALL",
-        .callSignTo = "NOCALL",
-        .ssidFrom = 0,
-        .ssidTo = 0
+    Client client;
+    client.init_asio();
+
+    client.set_open_handler([&client](websocketpp::connection_hdl hdl) {
+        spdlog::info("WebSocket connection opened");
+        // You can send messages here if needed
+    });
+
+    client.set_message_handler([&client](websocketpp::connection_hdl hdl, Client::message_ptr msg) {
+        spdlog::info("Received message: {}", msg->get_payload());
+        // Handle incoming messages here
+    });
+
+    websocketpp::lib::error_code ec;
+    auto con = client.get_connection("ws://localhost:8080", ec);
+    if (ec) {
+        spdlog::error("Could not create connection because: {}", ec.message());
+        return 1;
     };
-
-    config.print();
-    
-    AX25 ax25(config);
-    
-    std::vector<uint8_t> payload = {0x48, 0x65, 0x6C, 0x6C, 0x6F}; // "Hello" in ASCII
-    auto out = ax25.encode(payload);
-
-    spdlog::info("Encoded AX.25 Frame: ");
-    for (const auto& byte : out) {
-        spdlog::info("{:02X} ", byte);
-    }
-
-    spdlog::info("\n");
-    spdlog::info("Decoding the frame...");
-    auto decoded = ax25.decode(out);
-    spdlog::info("Decoded AX.25 Frame: From {}-{} To {}-{} Payload: ", decoded.fromCallSign, decoded.fromSSID, decoded.toCallSign, decoded.toSSID);
-    spdlog::info(std::string(decoded.payload.begin(), decoded.payload.end()));
 
     return 0;
 }   
