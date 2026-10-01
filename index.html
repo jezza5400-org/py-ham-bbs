@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+</head>
+<body>
+    <script>
+        async function openWebSocket() {
+            const ws = new WebSocket('ws://localhost:8080');
+            
+            const openPromise = new Promise((resolve, reject) => {
+                ws.onopen = () => resolve();
+                ws.onerror = (err) => reject(err);
+            });
+            await openPromise;
+
+            const sendMessage = (message) => {
+                if (ws.readyState === WebSocket.OPEN) {
+                    ws.send(message);
+                } else {
+                    console.error('WebSocket is not open. Ready state: ' + ws.readyState);
+                }
+            };
+
+            return { sendMessage };
+        }
+
+        (async () => {
+            const { sendMessage } = await openWebSocket();
+            sendMessage('Hello, WebSocket server!');
+        })();
+    </script>
+</body>
+</html>
