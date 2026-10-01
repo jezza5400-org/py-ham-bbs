@@ -10,3 +10,7 @@ add_library(ax25
 )
 target_link_libraries(ax25 spdlog::spdlog)
 target_include_directories(ax25 PUBLIC src)
+
+add_executable(ax25Test tests/test.cpp)
+target_link_libraries(ax25Test ax25 Catch2::Catch2WithMain)
+catch_discover_tests(ax25Test)
