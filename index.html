@@ -4,8 +4,37 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Document</title>
+
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+        }
+        div {
+            display: flex;
+            gap: 10px;
+        }
+        input {
+            padding: 5px;
+            font-size: 16px;
+        }
+        button {
+            padding: 5px 10px;
+            font-size: 16px;
+            cursor: pointer;
+        }
+    </style>
 </head>
 <body>
+    <form id="messageForm">
+        <input type="text" id="messageInput" placeholder="Type a message">
+        <button id="sendButton" type="submit">Send</button>
+    </form>
+
     <script>
         async function openWebSocket() {
             const ws = new WebSocket('ws://localhost:8080');
@@ -28,8 +57,21 @@
         }
 
         (async () => {
-            const { sendMessage } = await openWebSocket();
-            sendMessage('Hello, WebSocket server!');
+            const form = document.getElementById('messageForm');
+            const messageInput = document.getElementById('messageInput');
+
+            form.addEventListener('submit', (event) => {
+                event.preventDefault();
+                const message = messageInput.value.trim();
+                if (message && sendMessage) {
+                    sendMessage(message);
+                    messageInput.value = '';
+                }
+            });
+
+            const { sendMessage: send } = await openWebSocket();
+            sendMessage = send;
+
         })();
     </script>
 </body>
