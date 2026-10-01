@@ -40,8 +40,7 @@ std::vector<uint8_t> AX25::encode(const std::vector<uint8_t> &payload) {
   header.insert(header.end(), fromCallSign.begin(), fromCallSign.end());
   header.insert(header.end(), toCallSign.begin(), toCallSign.end());
   header.push_back(0x03); // Control field for UI frame
-  header.push_back(0xF0); // Protocol ID for no layer 3 protocol
-
+  
   frame.insert(frame.end(), header.begin(), header.end());
   frame.insert(frame.end(), payload.begin(), payload.end());
 
