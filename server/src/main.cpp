@@ -36,7 +36,6 @@ int main(int argc, char** argv) {
     });
 
     client.set_message_handler([&client, &ax25](websocketpp::connection_hdl hdl, Client::message_ptr msg) {
-     
         auto packet = ax25->encode(std::vector<uint8_t>(msg->get_payload().begin(), msg->get_payload().end()));
         printHex(packet);
     });
