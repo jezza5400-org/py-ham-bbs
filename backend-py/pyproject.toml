@@ -7,9 +7,7 @@ version = "0.1.0"
 description = "Python based BBS"
 readme = "README.md"
 requires-python = ">=3.14"
-dependencies = [
-    "websockets",
-]
+dependencies = ["websockets"]
 
 # Install with uv sync --upgrade --all-groups
 [dependency-groups]
@@ -43,7 +41,12 @@ reportUntypedFunctionDecorator = "error"
 
 [[tool.pyright.executionEnvironments]]
 root = "."
-extraPaths = ["src", "src/lib", ".venv/lib/python3.14/site-packages", ".venv/lib/python3.13/site-packages"]
+extraPaths = [
+	"src",
+	"src/lib",
+	".venv/lib/python3.14/site-packages",
+	".venv/lib/python3.13/site-packages",
+]
 
 [tool.ruff]
 target-version = "py314"
